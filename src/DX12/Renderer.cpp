@@ -32,7 +32,7 @@ constexpr float GOLDEN_RATIO = 1.6180339887f;
 // OnCreate
 //
 //--------------------------------------------------------------------------------------
-void Renderer::OnCreate(Device* pDevice, SwapChain *pSwapChain, float fontSize, const UIState* pState)
+void Renderer::OnCreate(Device* pDevice, SwapChain* pSwapChain, float fontSize, const UIState* pState)
 {
 	m_pDevice = pDevice;
 
@@ -62,9 +62,9 @@ void Renderer::OnCreate(Device* pDevice, SwapChain *pSwapChain, float fontSize, 
 	// initialize the GPU time stamps module
 	m_GPUTimer.OnCreate(pDevice, backBufferCount);
 
-    // Quick helper to upload resources, it has it's own commandList and uses suballocation.
-    const uint32_t uploadHeapMemSize = 1000 * 1024 * 1024;
-    m_UploadHeap.OnCreate(pDevice, uploadHeapMemSize);    // initialize an upload heap (uses suballocation for faster results)
+	// Quick helper to upload resources, it has it's own commandList and uses suballocation.
+	const uint32_t uploadHeapMemSize = 1000 * 1024 * 1024;
+	m_UploadHeap.OnCreate(pDevice, uploadHeapMemSize);    // initialize an upload heap (uses suballocation for faster results)
 
 	// Create GBuffer and render passes
 	//
@@ -252,8 +252,7 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 	// show loading progress
 	//
 	ImGui::OpenPopup("Loading");
-	if (ImGui::BeginPopupModal("Loading", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
+	if (ImGui::BeginPopupModal("Loading", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
 		float progress = (float)stage / 13.0f;
 		ImGui::ProgressBar(progress, ImVec2(0.f, 0.f), NULL);
 		ImGui::EndPopup();
@@ -264,18 +263,13 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 
 	// Loading stages
 	//
-	if (stage == 0)
-	{
-	}
-	else if (stage == 3)
-	{
+	if (stage == 0) {
+	} else if (stage == 3) {
 		Profile p("m_pGltfLoader->Load");
 
 		m_pGLTFTexturesAndBuffers = new GLTFTexturesAndBuffers();
 		m_pGLTFTexturesAndBuffers->OnCreate(m_pDevice, pGLTFCommon, &m_UploadHeap, &m_VidMemBufferPool, &m_ConstantBufferRing);
-	}
-	else if (stage == 4)
-	{
+	} else if (stage == 4) {
 		Profile p("LoadTextures");
 
 		// here we are loading onto the GPU all the textures and the inverse matrices
@@ -285,9 +279,7 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 		m_VidMemBufferPool.UploadData(m_UploadHeap.GetCommandList());
 
 		m_UploadHeap.FlushAndFinish();
-	}
-	else if (stage == 5)
-	{
+	} else if (stage == 5) {
 		Profile p("BLAS build");
 
 		m_asFactory.BuildFromGltf(m_pDevice, m_pGLTFTexturesAndBuffers, &m_resourceViewHeaps, &m_UploadHeap);
@@ -295,8 +287,7 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 
 		ID3D12GraphicsCommandList* pCmdLst1 = m_CommandListRing.GetNewCommandList();
 
-		for (auto&& blas : m_asFactory.GetBLASVector())
-		{
+		for (auto&& blas : m_asFactory.GetBLASVector()) {
 			blas.Build(pCmdLst1, m_scratchBuffer);
 		}
 
@@ -305,9 +296,7 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 		m_pDevice->GetGraphicsQueue()->ExecuteCommandLists(1, CmdListList1);
 
 		m_UploadHeap.FlushAndFinish();
-	}
-	else if (stage == 6)
-	{
+	} else if (stage == 6) {
 		Profile p("m_gltfMotionVector->OnCreate");
 
 		//create the glTF's textures, VBs, IBs, shaders and descriptors for this particular pass
@@ -323,9 +312,7 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 			m_GBuffer.m_NormalBuffer.GetFormat(),
 			pAsyncPool
 		);
-	}
-	else if (stage == 7)
-	{
+	} else if (stage == 7) {
 		Profile p("m_gltfDepth->OnCreate");
 
 		//create the glTF's textures, VBs, IBs, shaders and descriptors for this particular pass
@@ -340,9 +327,7 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 			pAsyncPool,
 			DXGI_FORMAT_D16_UNORM
 		);
-	}
-	else if (stage == 9)
-	{
+	} else if (stage == 9) {
 		Profile p("m_gltfPBR->OnCreate");
 
 		// same thing as above but for the PBR pass
@@ -360,9 +345,7 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 			pAsyncPool
 		);
 
-	}
-	else if (stage == 10)
-	{
+	} else if (stage == 10) {
 		Profile p("m_gltfBBox->OnCreate");
 
 		// just a bounding box pass that will draw boundingboxes instead of the geometry itself
@@ -380,9 +363,7 @@ int Renderer::LoadScene(GLTFCommon* pGLTFCommon, int stage)
 		// we are borrowing the upload heap command list for uploading to the GPU the IBs and VBs
 		m_VidMemBufferPool.UploadData(m_UploadHeap.GetCommandList());
 
-	}
-	else if (stage == 11)
-	{
+	} else if (stage == 11) {
 		Profile p("Flush");
 
 		m_UploadHeap.FlushAndFinish();
@@ -410,36 +391,31 @@ void Renderer::UnloadScene()
 	m_asyncPool.Flush();
 	m_pDevice->GPUFlush();
 
-	if (m_gltfPBR)
-	{
+	if (m_gltfPBR) {
 		m_gltfPBR->OnDestroy();
 		delete m_gltfPBR;
 		m_gltfPBR = NULL;
 	}
 
-	if (m_gltfDepth)
-	{
+	if (m_gltfDepth) {
 		m_gltfDepth->OnDestroy();
 		delete m_gltfDepth;
 		m_gltfDepth = NULL;
 	}
 
-	if (m_gltfMotionVector)
-	{
+	if (m_gltfMotionVector) {
 		m_gltfMotionVector->OnDestroy();
 		delete m_gltfMotionVector;
 		m_gltfMotionVector = NULL;
 	}
 
-	if (m_gltfBBox)
-	{
+	if (m_gltfBBox) {
 		m_gltfBBox->OnDestroy();
 		delete m_gltfBBox;
 		m_gltfBBox = NULL;
 	}
 
-	if (m_pGLTFTexturesAndBuffers)
-	{
+	if (m_pGLTFTexturesAndBuffers) {
 		m_pGLTFTexturesAndBuffers->OnDestroy();
 		delete m_pGLTFTexturesAndBuffers;
 		m_pGLTFTexturesAndBuffers = NULL;
@@ -466,8 +442,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 	// Sets the perFrame data 
 	per_frame* pPerFrame = NULL;
-	if (m_pGLTFTexturesAndBuffers)
-	{
+	if (m_pGLTFTexturesAndBuffers) {
 		// fill as much as possible using the GLTF (camera, lights, ...)
 		pPerFrame = m_pGLTFTexturesAndBuffers->m_pGLTFCommon->SetPerFrameData(cam);
 
@@ -490,8 +465,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 	bool bNeedCascades = false;
 	bool bNeedShadowResolve = false;
 	bool bNeedRt = true;
-	switch (pState->hMode)
-	{
+	switch (pState->hMode) {
 	case RtHybridMode::CascadesOnly:
 		bNeedRt = false;
 		bNeedCascades = true;
@@ -520,8 +494,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 	// Depth + Normal + Motion Vector PrePass  ------------------------------------------
 	//
-	if (m_gltfMotionVector && pPerFrame != NULL)
-	{
+	if (m_gltfMotionVector && pPerFrame != NULL) {
 		UserMarker marker(pCmdLst1, "Depth + Normal + Motion Vector PrePass");
 		pCmdLst1->RSSetViewports(1, &m_viewport);
 		pCmdLst1->RSSetScissorRects(1, &m_rectScissor);
@@ -547,21 +520,28 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 	// Find directional light
 	Light* directionalLightptr = NULL;
-	if (pPerFrame != NULL)
-	{
-		for (uint32_t i = 0; i < pPerFrame->lightCount; i++)
-		{
+	if (pPerFrame != NULL) {
+		for (uint32_t i = 0; i < pPerFrame->lightCount; i++) {
 			if (pPerFrame->lights[i].type != LightType_Directional)
 				continue;
 
 			directionalLightptr = &pPerFrame->lights[i];
+			if (pState->sunDirection[0] == FLT_MAX) {
+				const_cast<UIState*>(pState)->sunDirection[0] = directionalLightptr->direction[0];
+				const_cast<UIState*>(pState)->sunDirection[1] = directionalLightptr->direction[1];
+				const_cast<UIState*>(pState)->sunDirection[2] = directionalLightptr->direction[2];
+			} else {
+				directionalLightptr->direction[0] = pState->sunDirection[0];
+				directionalLightptr->direction[1] = pState->sunDirection[1];
+				directionalLightptr->direction[2] = pState->sunDirection[2];
+			}
+
 			break;
 		}
 	}
 
 	// Render shadow maps
-	if (m_gltfDepth && pPerFrame != NULL && bNeedCascades)
-	{
+	if (m_gltfDepth && pPerFrame != NULL && bNeedCascades) {
 		pCmdLst1->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_shadowMap.GetResource(), D3D12_RESOURCE_STATE_DEPTH_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 		UserMarker marker(pCmdLst1, "Shadow Cascade Pass");
 		pCmdLst1->ClearDepthStencilView(m_ShadowMapDSV.GetCPU(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
@@ -580,8 +560,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 		std::vector<math::Matrix4> matShadowProj = m_CSMManager.GetShadowProj();
 
-		for (int i = 0; i < pState->numCascades; ++i)
-		{
+		for (int i = 0; i < pState->numCascades; ++i) {
 			if (pState->cascadeSkipIndexes[i]) continue;
 
 			pCmdLst1->OMSetRenderTargets(0, nullptr, false, &m_ShadowMapDSV.GetCPU(i + 1));
@@ -605,8 +584,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 	// Shadow resolve ---------------------------------------------------------------------------
 	//
-	if (m_gltfDepth && pPerFrame != NULL && bNeedShadowResolve)
-	{
+	if (m_gltfDepth && pPerFrame != NULL && bNeedShadowResolve) {
 		const D3D12_RESOURCE_BARRIER preShadowResolve[] =
 		{
 			CD3DX12_RESOURCE_BARRIER::Transition(m_ShadowMask.GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS),
@@ -630,8 +608,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 		math::Matrix4 matTextureScale = math::Matrix4::scale(math::Vector3(0.5f, -0.5f, 1.0f));
 		math::Matrix4 matTextureTranslation = math::Matrix4::translation(math::Vector3(.5f, .5f, 0.f));
 		std::vector<math::Matrix4> matShadowProj = m_CSMManager.GetShadowProj();
-		for (int shadowMapCascadeIndex = 0; shadowMapCascadeIndex < pState->numCascades; ++shadowMapCascadeIndex)
-		{
+		for (int shadowMapCascadeIndex = 0; shadowMapCascadeIndex < pState->numCascades; ++shadowMapCascadeIndex) {
 			math::Matrix4 mShadowTexture = matTextureTranslation * matTextureScale * matShadowProj[shadowMapCascadeIndex];
 			cbShadowResolvePerFrame->m_vCascadeScale[shadowMapCascadeIndex] =
 				math::Vector4(mShadowTexture.getCol0().getX(), mShadowTexture.getCol1().getY(), mShadowTexture.getCol2().getZ(), 1.0f);
@@ -661,12 +638,10 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 	}
 
 	// raytracing
-	if (pPerFrame != NULL && m_gltfDepth && bNeedRt)
-	{
+	if (pPerFrame != NULL && m_gltfDepth && bNeedRt) {
 		Raytracing::TraceMethod method = Raytracing::TraceMethod::ForceOpaque;
 		bool bGatherNonOpaque = false;
-		switch (pState->amMode)
-		{
+		switch (pState->amMode) {
 		case RtAlphaMaskMode::SkipMaskedObjs:
 			method = Raytracing::TraceMethod::ForceOpaque;
 			break;
@@ -686,8 +661,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 		Raytracing::TLAS tlas0 = m_asFactory.BuildTLASFromGLTF(m_pDevice, m_pGLTFTexturesAndBuffers, true, bGatherNonOpaque);
 		Raytracing::TLAS tlas1 = m_asFactory.BuildTLASFromGLTF(m_pDevice, m_pGLTFTexturesAndBuffers, false, true);
 		tlas0.Build(pCmdLst1, m_scratchBuffer, m_ConstantBufferRing);
-		if (method == Raytracing::TraceMethod::SplitTlas)
-		{
+		if (method == Raytracing::TraceMethod::SplitTlas) {
 			tlas1.Build(pCmdLst1, m_scratchBuffer, m_ConstantBufferRing);
 		}
 		m_asFactory.SyncTLASBuilds(pCmdLst1);
@@ -704,8 +678,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 		tc.tileTolerance = pState->tileCutoff;
 		tc.cascadeCount = pState->numCascades;
 		tc.activeCascades = 0x0;
-		for (int i = 0; i < pState->numCascades; ++i)
-		{
+		for (int i = 0; i < pState->numCascades; ++i) {
 			tc.activeCascades |= pState->cascadeSkipIndexes[i] << i;
 		}
 		tc.cascadePixelSize = 1.f / pState->shadowMapWidth;
@@ -717,8 +690,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 		math::Matrix4 const matTextureTranslation = math::Matrix4::translation(math::Vector3(.5f, .5f, 0.f));
 		std::vector<math::Matrix4> const matShadowProj = m_CSMManager.GetShadowProj();
 		const std::vector<float> cascadePartitionsFrustum = m_CSMManager.GetCascadePartitionsFrustum();
-		for (int index = 0; index < pState->numCascades; ++index)
-		{
+		for (int index = 0; index < pState->numCascades; ++index) {
 			math::Matrix4 mShadowTexture = matTextureTranslation * matTextureScale * matShadowProj[index];
 			tc.cascadeScale[index] =
 				math::Vector4(mShadowTexture.getCol0().getX(), mShadowTexture.getCol1().getY(), mShadowTexture.getCol2().getZ(), 1.0f);
@@ -741,18 +713,12 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 		};
 		pCmdLst1->ResourceBarrier(ARRAYSIZE(preShadowResolve), preShadowResolve);
 
-		if (pState->bUseDenoiser)
-		{
+		if (pState->bUseDenoiser) {
 			m_shadowTrace.DenoiseHitsToShadowMask(pCmdLst1, m_ConstantBufferRing, cam, m_ShadowMaskUAV, &m_GPUTimer);
-		}
-		else
-		{
-			if (classifyMethod == Raytracing::ClassifyMethod::ByCascadeRange)
-			{
+		} else {
+			if (classifyMethod == Raytracing::ClassifyMethod::ByCascadeRange) {
 				m_shadowTrace.BlendHitsToShadowMask(pCmdLst1, m_ShadowMaskUAV);
-			}
-			else
-			{
+			} else {
 				m_shadowTrace.ResolveHitsToShadowMask(pCmdLst1, m_ShadowMaskUAV);
 			}
 			m_GPUTimer.GetTimeStamp(pCmdLst1, "Resolve ray hits");
@@ -776,13 +742,11 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 	// Render Scene to the GBuffer ------------------------------------------------
 	//
-	if (pPerFrame != NULL)
-	{
+	if (pPerFrame != NULL) {
 		pCmdLst1->RSSetViewports(1, &m_viewport);
 		pCmdLst1->RSSetScissorRects(1, &m_rectScissor);
 
-		if (m_gltfPBR)
-		{
+		if (m_gltfPBR) {
 			const bool bWireframe = pState->WireframeMode != UIState::WireframeMode::WIREFRAME_MODE_OFF;
 
 			std::vector<GltfPbrPass::BatchList> opaque, transparent;
@@ -803,28 +767,25 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 				m_GPUTimer.GetTimeStamp(pCmdLst1, "PBR Opaque");
 			}
 
-            // draw skydome
-            {
-                m_renderPassJustDepthAndHdr.BeginPass(pCmdLst1, false);
+			// draw skydome
+			{
+				m_renderPassJustDepthAndHdr.BeginPass(pCmdLst1, false);
 
-                // Render skydome
-                if (pState->SelectedSkydomeTypeIndex == 1)
-                {
-                    math::Matrix4 clipToView = math::inverse(pPerFrame->mCameraCurrViewProj);
-                    m_skyDome.Draw(pCmdLst1, clipToView);
-                    m_GPUTimer.GetTimeStamp(pCmdLst1, "Skydome cube");
-                }
-                else if (pState->SelectedSkydomeTypeIndex == 0)
-                {
-                    SkyDomeProc::Constants skyDomeConstants;
-                    skyDomeConstants.invViewProj = math::inverse(pPerFrame->mCameraCurrViewProj);
-                    skyDomeConstants.vSunDirection = math::Vector4(1.0f, 0.05f, 0.0f, 0.0f);
-                    skyDomeConstants.turbidity = 10.0f;
-                    skyDomeConstants.rayleigh = 2.0f;
-                    skyDomeConstants.mieCoefficient = 0.005f;
-                    skyDomeConstants.mieDirectionalG = 0.8f;
-                    skyDomeConstants.luminance = 1.0f;
-                    m_skyDomeProc.Draw(pCmdLst1, skyDomeConstants);
+				// Render skydome
+				if (pState->SelectedSkydomeTypeIndex == 1) {
+					math::Matrix4 clipToView = math::inverse(pPerFrame->mCameraCurrViewProj);
+					m_skyDome.Draw(pCmdLst1, clipToView);
+					m_GPUTimer.GetTimeStamp(pCmdLst1, "Skydome cube");
+				} else if (pState->SelectedSkydomeTypeIndex == 0) {
+					SkyDomeProc::Constants skyDomeConstants;
+					skyDomeConstants.invViewProj = math::inverse(pPerFrame->mCameraCurrViewProj);
+					skyDomeConstants.vSunDirection = math::Vector4(1.0f, 0.05f, 0.0f, 0.0f);
+					skyDomeConstants.turbidity = 10.0f;
+					skyDomeConstants.rayleigh = 2.0f;
+					skyDomeConstants.mieCoefficient = 0.005f;
+					skyDomeConstants.mieDirectionalG = 0.8f;
+					skyDomeConstants.luminance = 1.0f;
+					m_skyDomeProc.Draw(pCmdLst1, skyDomeConstants);
 
 					m_GPUTimer.GetTimeStamp(pCmdLst1, "Skydome proc");
 				}
@@ -842,10 +803,8 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 		// draw object's bounding boxes
 		//
-		if (m_gltfBBox && pPerFrame != NULL)
-		{
-			if (pState->bDrawBoundingBoxes)
-			{
+		if (m_gltfBBox && pPerFrame != NULL) {
+			if (pState->bDrawBoundingBoxes) {
 				m_gltfBBox->Draw(pCmdLst1, pPerFrame->mCameraCurrViewProj);
 
 				m_GPUTimer.GetTimeStamp(pCmdLst1, "Bounding Box");
@@ -854,15 +813,13 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 		// draw light's frustums
 		//
-		if (pState->bDrawLightFrustum && pPerFrame != NULL)
-		{
+		if (pState->bDrawLightFrustum && pPerFrame != NULL) {
 			UserMarker marker(pCmdLst1, "light frustrums");
 
 			math::Vector4 vCenter = math::Vector4(0.0f, 0.0f, 0.5f, 0.0f);
 			math::Vector4 vRadius = math::Vector4(1.0f, 1.0f, 0.5f, 0.0f);
 			math::Vector4 vColor = math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-			for (uint32_t i = 0; i < pPerFrame->lightCount; i++)
-			{
+			for (uint32_t i = 0; i < pPerFrame->lightCount; i++) {
 				math::Matrix4 spotlightMatrix = math::inverse(pPerFrame->lights[i].mLightViewProj);
 				math::Matrix4 worldMatrix = pPerFrame->mCameraCurrViewProj * spotlightMatrix;
 				m_wireframeBox.Draw(pCmdLst1, &m_wireframe, worldMatrix, vCenter, vRadius, vColor);
@@ -884,23 +841,21 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 		D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[] = { m_GBuffer.m_HDRRTV.GetCPU() };
 		pCmdLst1->OMSetRenderTargets(ARRAYSIZE(renderTargets), renderTargets, false, NULL);
 
-        m_downSample.Draw(pCmdLst1);
-        m_GPUTimer.GetTimeStamp(pCmdLst1, "Downsample");
+		m_downSample.Draw(pCmdLst1);
+		m_GPUTimer.GetTimeStamp(pCmdLst1, "Downsample");
 
-        m_bloom.Draw(pCmdLst1, &m_GBuffer.m_HDR);
-        m_GPUTimer.GetTimeStamp(pCmdLst1, "Bloom");
-    }
+		m_bloom.Draw(pCmdLst1, &m_GBuffer.m_HDR);
+		m_GPUTimer.GetTimeStamp(pCmdLst1, "Bloom");
+	}
 
 	// Apply TAA & Sharpen to m_HDR
-	if (pState->bUseTAA)
-	{
+	if (pState->bUseTAA) {
 		m_TAA.Draw(pCmdLst1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		m_GPUTimer.GetTimeStamp(pCmdLst1, "TAA");
 	}
 
 	// Magnifier Pass: m_HDR as input, pass' own output
-	if (pState->bUseMagnifier)
-	{
+	if (pState->bUseMagnifier) {
 		// Note: assumes m_GBuffer.HDR is in D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
 		m_magnifierPS.Draw(pCmdLst1, pState->MagnifierParams, m_GBuffer.m_HDRSRV);
 		m_GPUTimer.GetTimeStamp(pCmdLst1, "Magnifier");
@@ -910,19 +865,15 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 	}
 
 
-	if (pState->debugMode > 0)
-	{
+	if (pState->debugMode > 0) {
 		D3D12_RESOURCE_BARRIER preDebug[] = {
 			CD3DX12_RESOURCE_BARRIER::Transition(m_GBuffer.m_HDR.GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS),
 		};
 		pCmdLst1->ResourceBarrier(1, preDebug);
 
-		if (pState->debugMode >= 2)
-		{
+		if (pState->debugMode >= 2) {
 			m_shadowTrace.DebugTileClassification(pCmdLst1, pState->debugMode - 2, m_GBuffer.m_HDRUAV);
-		}
-		else if (pState->debugMode == 1)
-		{
+		} else if (pState->debugMode == 1) {
 			m_shadowTrace.ResolveHitsToShadowMask(pCmdLst1, m_GBuffer.m_HDRUAV);
 		}
 
@@ -943,8 +894,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 
 	// If using FreeSync HDR we need to to the tonemapping in-place and then apply the GUI, later we'll apply the color conversion into the swapchain
 	const bool bHDR = pSwapChain->GetDisplayMode() != DISPLAYMODE_SDR;
-	if (bHDR)
-	{
+	if (bHDR) {
 		// In place Tonemapping ------------------------------------------------------------------------
 		{
 			D3D12_RESOURCE_BARRIER inputRscToUAV = CD3DX12_RESOURCE_BARRIER::Transition(pRscCurrentInput, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -992,17 +942,14 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 	pCmdLst2->RSSetScissorRects(1, &m_rectScissor);
 	pCmdLst2->OMSetRenderTargets(1, pSwapChain->GetCurrentBackBufferRTV(), true, NULL);
 
-	if (bHDR)
-	{
+	if (bHDR) {
 		// FS HDR mode! Apply color conversion now.
 		//
 		m_colorConversionPS.Draw(pCmdLst2, &SRVCurrentInput);
 		m_GPUTimer.GetTimeStamp(pCmdLst2, "Color conversion");
 
 		pCmdLst2->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pRscCurrentInput, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	}
-	else
-	{
+	} else {
 		// non FreeSync HDR mode, that is SDR, here we apply the tonemapping from the HDR into the swapchain and then we render the GUI
 
 		// Tonemapping ------------------------------------------------------------------------
@@ -1024,8 +971,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 	if (pState->bUseMagnifier)
 		pCmdLst2->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_GBuffer.m_HDR.GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-	if (!m_pScreenShotName.empty())
-	{
+	if (!m_pScreenShotName.empty()) {
 		m_saveTexture.CopyRenderTargetIntoStagingTexture(m_pDevice->GetDevice(), pCmdLst2, pSwapChain->GetCurrentBackBufferResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	}
 
@@ -1043,8 +989,7 @@ void Renderer::OnRender(const UIState* pState, const Camera& cam, SwapChain* pSw
 	m_pDevice->GetGraphicsQueue()->ExecuteCommandLists(1, CmdListList2);
 
 	// Handle screenshot request
-	if (!m_pScreenShotName.empty())
-	{
+	if (!m_pScreenShotName.empty()) {
 		m_saveTexture.SaveStagingTextureAsJpeg(m_pDevice->GetDevice(), m_pDevice->GetGraphicsQueue(), m_pScreenShotName.c_str());
 		m_pScreenShotName.clear();
 	}
@@ -1064,8 +1009,7 @@ void Renderer::OnResizeShadowMapWidth(const UIState* pState)
 
 	m_shadowMap.InitDepthStencil(m_pDevice, "m_pShadowMap", &CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D16_UNORM, pState->shadowMapWidth, pState->shadowMapWidth, pState->numCascades, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL));
 	m_shadowMap.CreateDSV(0, &m_ShadowMapDSV, 0, pState->numCascades);
-	for (int i = 0; i < pState->numCascades; ++i)
-	{
+	for (int i = 0; i < pState->numCascades; ++i) {
 		m_shadowMap.CreateDSV(i + 1, &m_ShadowMapDSV, i);
 	}
 	m_shadowMap.CreateSRV(0, &m_ShadowMapSRV);

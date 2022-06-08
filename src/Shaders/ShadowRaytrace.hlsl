@@ -160,6 +160,7 @@ bool TraceShadows(
 
 	// use tile mask to decide what pixels will fire a ray
 	bool const bActiveLane = WaveMaskToBool(currentTile.mask, localID);
+	//bool const bActiveLane = true;
 	bool bRayHitSomething = true;
 	if (bActiveLane)
 	{
@@ -177,12 +178,12 @@ bool TraceShadows(
 		ray.TMax = currentTile.maxT;
 
 		{
-			float2 const noise = t2d_blueNoise[pixelCoord % 128].rg + noisePhase;
+			float2 const noise = t2d_blueNoise[pixelCoord % 128].rg;// +noisePhase;
 
 			ray.Direction = normalize(MapToCone(fmod(noise, 1), ray.Direction, sunSize));
 		}
 
-		// reverse ray direction for better traversal 
+		// reverse ray direction for better traversal
 		if (bUseCascadesForRayT)
 		{
 			ray.Origin = ray.Origin + ray.Direction * (currentTile.maxT);

@@ -27,16 +27,14 @@
 #include "imgui_internal.h"
 static void DisableUIStateBegin(const bool& bEnable)
 {
-    if (!bEnable)
-    {
+    if (!bEnable) {
         ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
     }
 };
 static void DisableUIStateEnd(const bool& bEnable)
 {
-    if (!bEnable)
-    {
+    if (!bEnable) {
         ImGui::PopItemFlag();
         ImGui::PopStyleVar();
     }
@@ -48,7 +46,7 @@ static constexpr float MAGNIFICATION_AMOUNT_MAX = 32.0f;
 static constexpr float MAGNIFIER_RADIUS_MIN = 0.01f;
 static constexpr float MAGNIFIER_RADIUS_MAX = 0.85f;
 static constexpr float MAGNIFIER_BORDER_COLOR__LOCKED[3] = { 0.002f, 0.72f, 0.0f }; // G
-static constexpr float MAGNIFIER_BORDER_COLOR__FREE  [3] = { 0.72f, 0.002f, 0.0f }; // R
+static constexpr float MAGNIFIER_BORDER_COLOR__FREE[3] = { 0.72f, 0.002f, 0.0f }; // R
 template<class T> static T clamped(const T& v, const T& min, const T& max)
 {
     if (v < min)      return min;
@@ -61,8 +59,7 @@ template<class T> static T clamped(const T& v, const T& min, const T& max)
 void HybridRaytracer::BuildUI()
 {
     // if we haven't initialized GLTFLoader yet, don't draw UI.
-    if (m_pGltfLoader == nullptr)
-    {
+    if (m_pGltfLoader == nullptr) {
         LoadScene(m_activeScene);
         return;
     }
@@ -91,11 +88,9 @@ void HybridRaytracer::BuildUI()
     ImGui::SetNextWindowPos(ImVec2(CONTROLS_WINDOW_POS_X, CONTROLS_WINDOW_POS_Y), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(CONTROLW_WINDOW_SIZE_X, CONTROLW_WINDOW_SIZE_Y), ImGuiCond_FirstUseEver);
 
-    if (m_UIState.bShowControlsWindow)
-    {
+    if (m_UIState.bShowControlsWindow) {
         ImGui::Begin("CONTROLS (F1)", &m_UIState.bShowControlsWindow);
-        if (ImGui::CollapsingHeader("Animation", ImGuiTreeNodeFlags_DefaultOpen))
-        {
+        if (ImGui::CollapsingHeader("Animation", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("Play", &m_bPlay);
             ImGui::SliderFloat("Time", &m_time, 0, 30);
         }
@@ -103,16 +98,15 @@ void HybridRaytracer::BuildUI()
         ImGui::Spacing();
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            char const* cameraControl[] = { 
-                "Orbit", 
-                "WASD", 
-                "cam #0", 
-                "cam #1", 
-                "cam #2", 
-                "cam #3", 
-                "cam #4", 
+        if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
+            char const* cameraControl[] = {
+                "Orbit",
+                "WASD",
+                "cam #0",
+                "cam #1",
+                "cam #2",
+                "cam #3",
+                "cam #4",
                 "cam #5",
                 "cam #6",
                 "cam #7",
@@ -128,12 +122,11 @@ void HybridRaytracer::BuildUI()
             ImGui::Combo("Camera", &m_activeCamera, cameraControl, min((int)(m_pGltfLoader->m_cameras.size() + 2), _countof(cameraControl)));
 
             auto getterLambda = [](void* data, int idx, const char** out_str)->bool { *out_str = ((std::vector<std::string> *)data)->at(idx).c_str(); return true; };
-            if (ImGui::Combo("Model", &m_activeScene, getterLambda, &m_sceneNames, (int)m_sceneNames.size()))
-            {
+            if (ImGui::Combo("Model", &m_activeScene, getterLambda, &m_sceneNames, (int)m_sceneNames.size())) {
                 // Note:
                 // probably queueing this as an event and handling it at the end/beginning 
                 // of frame is a better idea rather than in the middle of drawing UI.
-                LoadScene(m_activeScene); 
+                LoadScene(m_activeScene);
 
                 //bail out as we need to reload everything
                 ImGui::End();
@@ -148,8 +141,7 @@ void HybridRaytracer::BuildUI()
             ImGui::Combo("Skydome", &m_UIState.SelectedSkydomeTypeIndex, skyDomeType, _countof(skyDomeType));
 
             ImGui::SliderFloat("IBL Factor", &m_UIState.IBLFactor, 0.0f, 3.0f);
-            for (int i = 0; i < m_pGltfLoader->m_lights.size(); i++)
-            {
+            for (int i = 0; i < m_pGltfLoader->m_lights.size(); i++) {
                 ImGui::SliderFloat(format("Light %i Intensity", i).c_str(), &m_pGltfLoader->m_lights[i].m_intensity, 0.0f, 50.0f);
             }
 
@@ -158,13 +150,53 @@ void HybridRaytracer::BuildUI()
                 bool value_changed = ImGui::SliderFloat("Sun solid angle", &v_deg, 0, 2, "%.2f deg");
                 m_UIState.sunSizeAngle = v_deg * (2 * IM_PI) / 360.0f;
             }
+
+            if (m_UIState.sunDirection[0] != FLT_MAX) {
+                float* dir = m_UIState.sunDirection;
+                float x = dir[0];
+                float y = dir[1];
+                float z = dir[2];
+                float length = sqrt(x * x + y * y + z * z);
+                x /= length;
+                y /= length;
+                z /= length;
+
+                float theta = acos(z);
+                float phi;
+
+                phi = atan2(y, x);
+
+                //phi = phi * 360.0f / (2 * AMD_PI);
+                //theta = theta * 360.0f / (2 * AMD_PI);
+                ImGui::SliderAngle("sun theta", &theta, -360.0f, 360.0f);
+                ImGui::SliderAngle("sun phi", &phi, -360.0f, 360.0f);
+
+                //m_UIState.b
+                //if (m_bPlay) {
+                    float startAngle = (50.0f * 2.0f * AMD_PI / 360.0f);
+                    float deltaAngle = ((130.0f - 50.0f) * 2.0f * AMD_PI / 360.0f);
+                    float period = 1200.0f;
+                    theta = deltaAngle * ((fmod(m_time, period) / period)) + startAngle;
+                //}
+
+                phi = fmod(phi, 2.0f * AMD_PI);
+                theta = fmod(theta, 2.0f * AMD_PI);
+                //phi = phi * 2.0f * AMD_PI / 360.0f;
+                //theta = theta * 2.0f * AMD_PI / 360.0f;
+                x = cos(phi) * sin(theta);
+                y = sin(phi) * sin(theta);
+                z = cos(theta);
+
+                m_UIState.sunDirection[0] = x;
+                m_UIState.sunDirection[1] = y;
+                m_UIState.sunDirection[2] = z;
+            }
         }
 
         ImGui::Spacing();
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("PostProcessing", ImGuiTreeNodeFlags_DefaultOpen))
-        {
+        if (ImGui::CollapsingHeader("PostProcessing", ImGuiTreeNodeFlags_DefaultOpen)) {
             const char* tonemappers[] = { "AMD Tonemapper", "DX11DSK", "Reinhard", "Uncharted2Tonemap", "ACES", "No tonemapper" };
             ImGui::Combo("Tonemapper", &m_UIState.SelectedTonemapperIndex, tonemappers, _countof(tonemappers));
 
@@ -176,8 +208,7 @@ void HybridRaytracer::BuildUI()
         ImGui::Spacing();
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Magnifier", ImGuiTreeNodeFlags_DefaultOpen))
-        {
+        if (ImGui::CollapsingHeader("Magnifier", ImGuiTreeNodeFlags_DefaultOpen)) {
             // read in Magnifier pass parameters from the UI & app state
             MagnifierPS::PassParameters& params = m_UIState.MagnifierParams;
             params.uImageHeight = m_Height;
@@ -210,11 +241,10 @@ void HybridRaytracer::BuildUI()
         ImGui::Spacing();
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
-        {
+        if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("Show Bounding Boxes", &m_UIState.bDrawBoundingBoxes);
             ImGui::Checkbox("Show Light Frustum", &m_UIState.bDrawLightFrustum);
-            
+
             ImGui::Text("Wireframe");
             ImGui::SameLine(); ImGui::RadioButton("Off", (int*)&m_UIState.WireframeMode, (int)UIState::WireframeMode::WIREFRAME_MODE_OFF);
             ImGui::SameLine(); ImGui::RadioButton("Shaded", (int*)&m_UIState.WireframeMode, (int)UIState::WireframeMode::WIREFRAME_MODE_SHADED);
@@ -226,13 +256,10 @@ void HybridRaytracer::BuildUI()
         ImGui::Spacing();
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Presentation Mode", ImGuiTreeNodeFlags_DefaultOpen))
-        {
+        if (ImGui::CollapsingHeader("Presentation Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
             const char* fullscreenModes[] = { "Windowed", "BorderlessFullscreen", "ExclusiveFulscreen" };
-            if (ImGui::Combo("Fullscreen Mode", (int*)&m_fullscreenMode, fullscreenModes, _countof(fullscreenModes)))
-            {
-                if (m_previousFullscreenMode != m_fullscreenMode)
-                {
+            if (ImGui::Combo("Fullscreen Mode", (int*)&m_fullscreenMode, fullscreenModes, _countof(fullscreenModes))) {
+                if (m_previousFullscreenMode != m_fullscreenMode) {
                     HandleFullScreen();
                     m_previousFullscreenMode = m_fullscreenMode;
                 }
@@ -242,34 +269,26 @@ void HybridRaytracer::BuildUI()
         ImGui::Spacing();
         ImGui::Spacing();
 
-        if (m_FreesyncHDROptionEnabled && ImGui::CollapsingHeader("FreeSync HDR", ImGuiTreeNodeFlags_DefaultOpen))
-        {
+        if (m_FreesyncHDROptionEnabled && ImGui::CollapsingHeader("FreeSync HDR", ImGuiTreeNodeFlags_DefaultOpen)) {
             static bool openWarning = false;
             const char** displayModeNames = &m_displayModesNamesAvailable[0];
-            if (ImGui::Combo("Display Mode", (int*)&m_currentDisplayModeNamesIndex, displayModeNames, (int)m_displayModesNamesAvailable.size()))
-            {
-                if (m_fullscreenMode != PRESENTATIONMODE_WINDOWED)
-                {
+            if (ImGui::Combo("Display Mode", (int*)&m_currentDisplayModeNamesIndex, displayModeNames, (int)m_displayModesNamesAvailable.size())) {
+                if (m_fullscreenMode != PRESENTATIONMODE_WINDOWED) {
                     UpdateDisplay(m_displayModesAvailable[m_currentDisplayModeNamesIndex], m_disableLocalDimming);
                     m_previousDisplayModeNamesIndex = m_currentDisplayModeNamesIndex;
-                }
-                else if (CheckIfWindowModeHdrOn() &&
+                } else if (CheckIfWindowModeHdrOn() &&
                     (m_displayModesAvailable[m_currentDisplayModeNamesIndex] == DISPLAYMODE_SDR ||
                         m_displayModesAvailable[m_currentDisplayModeNamesIndex] == DISPLAYMODE_HDR10_2084 ||
-                        m_displayModesAvailable[m_currentDisplayModeNamesIndex] == DISPLAYMODE_HDR10_SCRGB))
-                {
+                        m_displayModesAvailable[m_currentDisplayModeNamesIndex] == DISPLAYMODE_HDR10_SCRGB)) {
                     UpdateDisplay(m_displayModesAvailable[m_currentDisplayModeNamesIndex], m_disableLocalDimming);
                     m_previousDisplayModeNamesIndex = m_currentDisplayModeNamesIndex;
-                }
-                else
-                {
+                } else {
                     openWarning = true;
                     m_currentDisplayModeNamesIndex = m_previousDisplayModeNamesIndex;
                 }
             }
 
-            if (openWarning)
-            {
+            if (openWarning) {
                 ImGui::OpenPopup("Display Modes Warning");
                 ImGui::BeginPopupModal("Display Modes Warning", NULL, ImGuiWindowFlags_AlwaysAutoResize);
                 ImGui::Text("\nChanging display modes is only available either using HDR toggle in windows display setting for HDR10 modes or in fullscreen for FS HDR modes\n\n");
@@ -278,8 +297,7 @@ void HybridRaytracer::BuildUI()
             }
 
             if (m_displayModesAvailable[m_currentDisplayModeNamesIndex] == DISPLAYMODE_FSHDR_Gamma22 ||
-                m_displayModesAvailable[m_currentDisplayModeNamesIndex] == DISPLAYMODE_FSHDR_SCRGB)
-            {
+                m_displayModesAvailable[m_currentDisplayModeNamesIndex] == DISPLAYMODE_FSHDR_SCRGB) {
                 static bool selectedDisableLocaldimmingSetting = false;
                 if (ImGui::Checkbox("Disable Local Dimming", &selectedDisableLocaldimmingSetting))
                     UpdateDisplay(m_displayModesAvailable[m_currentDisplayModeNamesIndex], selectedDisableLocaldimmingSetting);
@@ -289,8 +307,7 @@ void HybridRaytracer::BuildUI()
         ImGui::Spacing();
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Raytracing", ImGuiTreeNodeFlags_DefaultOpen))
-        {
+        if (ImGui::CollapsingHeader("Raytracing", ImGuiTreeNodeFlags_DefaultOpen)) {
             const char* debugItems[] =
             {
                 "Off",
@@ -333,29 +350,23 @@ void HybridRaytracer::BuildUI()
         ImGui::Spacing();
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Hybrid Shadows", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            if (ImGui::Combo("ShadowMapWidths", &m_UIState.shadowMapWidthIndex, k_shadowMapWidthNames, _countof(k_shadowMapWidthNames)))
-            {
+        if (ImGui::CollapsingHeader("Hybrid Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::Combo("ShadowMapWidths", &m_UIState.shadowMapWidthIndex, k_shadowMapWidthNames, _countof(k_shadowMapWidthNames))) {
                 m_UIState.shadowMapWidth = k_shadowMapWidths[m_UIState.shadowMapWidthIndex];
                 m_device.GPUFlush();
-                if (m_pRenderer != NULL)
-                {
+                if (m_pRenderer != NULL) {
                     m_pRenderer->OnResizeShadowMapWidth(&m_UIState);
                 }
             }
 
-            if (ImGui::SliderInt("Num Cascades", &m_UIState.numCascades, 1, 4))
-            {
+            if (ImGui::SliderInt("Num Cascades", &m_UIState.numCascades, 1, 4)) {
                 m_device.GPUFlush();
-                if (m_pRenderer != NULL)
-                {
+                if (m_pRenderer != NULL) {
                     m_pRenderer->OnResizeShadowMapWidth(&m_UIState);
                 }
             }
 
-            for (int i = 0; i < m_UIState.numCascades - 1; ++i)
-            {
+            for (int i = 0; i < m_UIState.numCascades - 1; ++i) {
                 ImGui::SliderFloat(format("Cascade splitpoints %i", i).c_str(), &m_UIState.cascadeSplitPoint[i],
                     0.0f, 100.0f, "%.2f%%");
             }
@@ -375,8 +386,7 @@ void HybridRaytracer::BuildUI()
 
     // Render PROFILER window
     //
-    if (m_UIState.bShowProfilerWindow)
-    {
+    if (m_UIState.bShowProfilerWindow) {
         constexpr size_t NUM_FRAMES = 128;
         static float FRAME_TIME_ARRAY[NUM_FRAMES] = { 0 };
 
@@ -389,12 +399,10 @@ void HybridRaytracer::BuildUI()
         //scrolling data and average FPS computing
         const std::vector<TimeStamp>& timeStamps = m_pRenderer->GetTimingValues();
         const bool bTimeStampsAvailable = timeStamps.size() > 0;
-        if (bTimeStampsAvailable)
-        {
+        if (bTimeStampsAvailable) {
             RECENT_HIGHEST_FRAME_TIME = 0;
             FRAME_TIME_ARRAY[NUM_FRAMES - 1] = timeStamps.back().m_microseconds;
-            for (uint32_t i = 0; i < NUM_FRAMES - 1; i++)
-            {
+            for (uint32_t i = 0; i < NUM_FRAMES - 1; i++) {
                 FRAME_TIME_ARRAY[i] = FRAME_TIME_ARRAY[i + 1];
             }
             RECENT_HIGHEST_FRAME_TIME = max(RECENT_HIGHEST_FRAME_TIME, FRAME_TIME_ARRAY[NUM_FRAMES - 1]);
@@ -414,24 +422,21 @@ void HybridRaytracer::BuildUI()
         ImGui::Text("CPU        : %s", m_systemInfo.mCPUName.c_str());
         ImGui::Text("FPS        : %d (%.2f ms)", fps, frameTime_ms);
 
-        if (ImGui::CollapsingHeader("GPU Timings", ImGuiTreeNodeFlags_DefaultOpen))
-        {
+        if (ImGui::CollapsingHeader("GPU Timings", ImGuiTreeNodeFlags_DefaultOpen)) {
             std::string msOrUsButtonText = m_UIState.bShowMilliseconds ? "Switch to microseconds" : "Switch to milliseconds";
             if (ImGui::Button(msOrUsButtonText.c_str())) {
                 m_UIState.bShowMilliseconds = !m_UIState.bShowMilliseconds;
             }
             ImGui::Spacing();
 
-            if (m_isCpuValidationLayerEnabled || m_isGpuValidationLayerEnabled)
-            {
-                ImGui::TextColored(ImVec4(1,1,0,1), "WARNING: Validation layer is switched on"); 
+            if (m_isCpuValidationLayerEnabled || m_isGpuValidationLayerEnabled) {
+                ImGui::TextColored(ImVec4(1, 1, 0, 1), "WARNING: Validation layer is switched on");
                 ImGui::Text("Performance numbers may be inaccurate!");
             }
 
             // find the index of the FrameTimeGraphMaxValue as the next higher-than-recent-highest-frame-time in the pre-determined value list
             size_t iFrameTimeGraphMaxValue = 0;
-            for (int i = 0; i < _countof(FRAME_TIME_GRAPH_MAX_VALUES); ++i)
-            {
+            for (int i = 0; i < _countof(FRAME_TIME_GRAPH_MAX_VALUES); ++i) {
                 if (RECENT_HIGHEST_FRAME_TIME < FRAME_TIME_GRAPH_MAX_VALUES[i]) // FRAME_TIME_GRAPH_MAX_VALUES are in increasing order
                 {
                     iFrameTimeGraphMaxValue = min(_countof(FRAME_TIME_GRAPH_MAX_VALUES) - 1, i + 1);
@@ -440,8 +445,7 @@ void HybridRaytracer::BuildUI()
             }
             ImGui::PlotLines("", FRAME_TIME_ARRAY, NUM_FRAMES, 0, "GPU frame time (us)", 0.0f, FRAME_TIME_GRAPH_MAX_VALUES[iFrameTimeGraphMaxValue], ImVec2(0, 80));
 
-            for (uint32_t i = 0; i < timeStamps.size(); i++)
-            {
+            for (uint32_t i = 0; i < timeStamps.size(); i++) {
                 float value = m_UIState.bShowMilliseconds ? timeStamps[i].m_microseconds / 1000.0f : timeStamps[i].m_microseconds;
                 const char* pStrUnit = m_UIState.bShowMilliseconds ? "ms" : "us";
                 ImGui::Text("%-18s: %7.2f %s", timeStamps[i].m_label.c_str(), value, pStrUnit);
@@ -490,6 +494,7 @@ void UIState::Initialize()
     this->blurBetweenCascadesAmount = 0.005f;
     this->pcfOffset = 0.002f;
     this->sunSizeAngle = 0.5f * AMD_PI / 180;
+    this->sunDirection[0] = this->sunDirection[1] = this->sunDirection[2] = FLT_MAX;
 
     this->debugMode = 0;
     this->bUseDenoiser = true;
@@ -507,21 +512,17 @@ void UIState::Initialize()
 //
 void UIState::ToggleMagnifierLock()
 {
-    if (this->bUseMagnifier)
-    {
+    if (this->bUseMagnifier) {
         this->bLockMagnifierPositionHistory = this->bLockMagnifierPosition; // record histroy
         this->bLockMagnifierPosition = !this->bLockMagnifierPosition; // flip state
         const bool bLockSwitchedOn = !this->bLockMagnifierPositionHistory && this->bLockMagnifierPosition;
         const bool bLockSwitchedOff = this->bLockMagnifierPositionHistory && !this->bLockMagnifierPosition;
-        if (bLockSwitchedOn)
-        {
+        if (bLockSwitchedOn) {
             const ImGuiIO& io = ImGui::GetIO();
             this->LockedMagnifiedScreenPositionX = static_cast<int>(io.MousePos.x);
             this->LockedMagnifiedScreenPositionY = static_cast<int>(io.MousePos.y);
             for (int ch = 0; ch < 3; ++ch) this->MagnifierParams.fBorderColorRGB[ch] = MAGNIFIER_BORDER_COLOR__LOCKED[ch];
-        }
-        else if (bLockSwitchedOff)
-        {
+        } else if (bLockSwitchedOff) {
             for (int ch = 0; ch < 3; ++ch) this->MagnifierParams.fBorderColorRGB[ch] = MAGNIFIER_BORDER_COLOR__FREE[ch];
         }
     }
@@ -530,5 +531,5 @@ void UIState::ToggleMagnifierLock()
 // These are currently not bound to any mouse input and are here for convenience/reference.
 // Mouse scroll is currently wired up to camera for panning and moving in the local Z direction.
 // Any application that would prefer otherwise can utilize these for easily controlling the magnifier parameters through the desired input.
-void UIState::AdjustMagnifierSize         (float increment /*= 0.05f*/){ MagnifierParams.fMagnifierScreenRadius = clamped(MagnifierParams.fMagnifierScreenRadius + increment, MAGNIFIER_RADIUS_MIN, MAGNIFIER_RADIUS_MAX); }
-void UIState::AdjustMagnifierMagnification(float increment /*= 1.00f*/){ MagnifierParams.fMagnificationAmount   = clamped(MagnifierParams.fMagnificationAmount + increment, MAGNIFICATION_AMOUNT_MIN, MAGNIFICATION_AMOUNT_MAX); }
+void UIState::AdjustMagnifierSize(float increment /*= 0.05f*/) { MagnifierParams.fMagnifierScreenRadius = clamped(MagnifierParams.fMagnifierScreenRadius + increment, MAGNIFIER_RADIUS_MIN, MAGNIFIER_RADIUS_MAX); }
+void UIState::AdjustMagnifierMagnification(float increment /*= 1.00f*/) { MagnifierParams.fMagnificationAmount = clamped(MagnifierParams.fMagnificationAmount + increment, MAGNIFICATION_AMOUNT_MIN, MAGNIFICATION_AMOUNT_MAX); }

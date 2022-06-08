@@ -70,7 +70,7 @@ struct UIState
     bool  bDrawBoundingBoxes;
     bool  bDrawLightFrustum;
 
-    enum class WireframeMode : int
+    enum class WireframeMode: int
     {
         WIREFRAME_MODE_OFF = 0,
         WIREFRAME_MODE_SHADED = 1,
@@ -82,9 +82,10 @@ struct UIState
 
     int debugMode;
     bool bUseDenoiser;
-    bool bRejectLitPixels; 
+    bool bRejectLitPixels;
     bool bUseCascadesForRayT;
     float sunSizeAngle;
+    float sunDirection[3];
     RtAlphaMaskMode amMode;
     RtHybridMode    hMode;
     uint32_t tileCutoff;

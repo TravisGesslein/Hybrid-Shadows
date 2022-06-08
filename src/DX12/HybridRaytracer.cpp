@@ -123,7 +123,7 @@ void HybridRaytracer::OnCreate()
 	if(m_device.IsRT11Supported() == false)
 	{ 
 		ShowCustomErrorMessageBox(L"This sample requires a DXR 1.1 capable GPU.");
-		PostQuitMessage(1);
+		//PostQuitMessage(1);
 	}
 
 
@@ -376,6 +376,7 @@ void HybridRaytracer::OnUpdate()
 		m_pGltfLoader->TransformScene(0, math::Matrix4::identity());
 	}
 }
+
 void HybridRaytracer::HandleInput(const ImGuiIO& io)
 {
 	auto fnIsKeyTriggered = [&io](char key) { return io.KeysDown[key] && io.KeysDownDuration[key] == 0.0f; };
