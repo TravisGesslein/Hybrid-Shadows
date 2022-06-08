@@ -485,7 +485,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	LPSTR lpCmdLine,
 	int nCmdShow)
 {
-	LPCSTR Name = "Hybrid Shadows v1.0";
+	LPCSTR Name = "Hybrid Shadows v1.0 Deluxe Edition";
 
 	// create new DX sample
 	return RunFramework(hInstance, lpCmdLine, nCmdShow, new HybridRaytracer(Name));

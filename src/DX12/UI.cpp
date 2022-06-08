@@ -22,6 +22,10 @@
 #include "imgui.h"
 #include "base/FrameworkWindows.h"
 
+const float sunAnglePeriod = 300.0f;
+const float sunStartTheta = 70.0f;
+const float sunEndTheta = 130.0f;
+
 // To use the 'disabled UI state' functionality (ImGuiItemFlags_Disabled), include internal header
 // https://github.com/ocornut/imgui/issues/211#issuecomment-339241929
 #include "imgui_internal.h"
@@ -92,7 +96,7 @@ void HybridRaytracer::BuildUI()
         ImGui::Begin("CONTROLS (F1)", &m_UIState.bShowControlsWindow);
         if (ImGui::CollapsingHeader("Animation", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("Play", &m_bPlay);
-            ImGui::SliderFloat("Time", &m_time, 0, 30);
+            ImGui::SliderFloat("Time", &m_time, 0, sunAnglePeriod);
         }
 
         ImGui::Spacing();
@@ -171,13 +175,10 @@ void HybridRaytracer::BuildUI()
                 ImGui::SliderAngle("sun theta", &theta, -360.0f, 360.0f);
                 ImGui::SliderAngle("sun phi", &phi, -360.0f, 360.0f);
 
-                //m_UIState.b
-                //if (m_bPlay) {
-                    float startAngle = (50.0f * 2.0f * AMD_PI / 360.0f);
-                    float deltaAngle = ((130.0f - 50.0f) * 2.0f * AMD_PI / 360.0f);
-                    float period = 1200.0f;
-                    theta = deltaAngle * ((fmod(m_time, period) / period)) + startAngle;
-                //}
+                float startAngle = (sunStartTheta * 2.0f * AMD_PI / 360.0f);
+                float deltaAngle = ((sunEndTheta - sunStartTheta) * 2.0f * AMD_PI / 360.0f);
+                float period = sunAnglePeriod;
+                theta = deltaAngle * ((fmod(m_time, period) / period)) + startAngle;
 
                 phi = fmod(phi, 2.0f * AMD_PI);
                 theta = fmod(theta, 2.0f * AMD_PI);
@@ -345,6 +346,7 @@ void HybridRaytracer::BuildUI()
             };
             ImGui::Text("Shadow mode");
             ImGui::ListBox("##Shadow mode", (int*)&m_UIState.hMode, modes, 3);
+            m_UIState.hMode = RtHybridMode::RaytracingOnly;
         }
 
         ImGui::Spacing();
